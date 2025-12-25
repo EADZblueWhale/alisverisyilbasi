@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(move:*)",
+      "Bash(if not exist \"static\" mkdir static)",
+      "Bash(if exist \"templates\\static\\style.css\" move \"templates\\static\\style.css\" \"static\\style.css\")",
+      "Bash(python:*)",
+      "Bash(dir:*)",
+      "Bash(pip install:*)",
+      "Bash(find:*)",
+      "Bash(taskkill:*)",
+      "Bash(nul)",
+      "Bash(del instancebuyulu_orman.db)",
+      "Bash(timeout:*)",
+      "Bash(del \"c:\\Users\\alkan\\OneDrive\\Masaüstü\\yilbasi-alisverisi\\update_navbar.py\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
