@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profilim - Büyülü Sepet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="snowflakes" aria-hidden="true"><div class="snowflake">❅</div><div class="snowflake">❆</div><div class="snowflake">❅</div><div class="snowflake">❆</div><div class="snowflake">❅</div><div class="snowflake">❆</div><div class="snowflake">❅</div><div class="snowflake">❆</div><div class="snowflake">❅</div><div class="snowflake">❆</div></div>
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <h1><a href="/" style="text-decoration:none; color:inherit;">🎁 Büyülü Sepet ✨</a></h1>
+            </div>
+            <div class="search-bar-container">
+                <form action="/urunler" method="GET" class="search-form">
+                    <input type="text" name="search" placeholder="Ürün ara..." class="search-input">
+                    <button type="submit" class="search-button">🔍</button>
+                </form>
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="nav-links" id="navMenu">
+                <a href="/">Ana Sayfa</a>
+                <a href="/urunler">Ürünler</a>
+                <a href="/urunler?kategori=cocuk" class="kids-link">🎈 Çocuklar İçin</a>
+                <a href="/hakkimizda">Hakkımızda</a>
+                <a href="/iletisim">İletişim</a>
+                <a href="/sepet" class="cart-fab">🛒 Sepet</a>
+                {% if current_user.is_authenticated %}
+                    <a href="/favoriler">❤️ Favoriler</a>
+                    <a href="/support">💬 Destek</a>
+                    <a href="/game" class="forest-link">🌲 Büyülü Orman</a>
+                    <a href="/profile" class="active">👤 {{ current_user.name.split()[0][0]}}.{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else 'U' }}</a>
+                    <a href="/logout">🚪 Çıkış</a>
+                {% else %}
+                    <a href="/login">🔐 Giriş</a>
+                    <a href="/register">✨ Kayıt Ol</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // Search autocomplete system
+        const products = [
+            {id: 1, name: 'Sihirli Kar Küresi', category: 'Dekorasyon', icon: '🔮'},
+            {id: 2, name: 'Peri Işığı Lambası', category: 'Aydınlatma', icon: '💡'},
+            {id: 3, name: 'Elfler İçin El Yapımı Atkı', category: 'Giyim', icon: '🧣'},
+            {id: 4, name: 'Çam Kozalağı Süs Seti', category: 'Dekorasyon', icon: '🌲'},
+            {id: 5, name: 'Geyik Peluş Oyuncak', category: 'Çocuk', icon: '🦌'},
+            {id: 6, name: 'Yıldız Tozlu Mum Seti', category: 'Dekorasyon', icon: '🕯️'},
+            {id: 7, name: 'Büyülü Sepet Çayı', category: 'Yiyecek', icon: '☕'},
+            {id: 8, name: 'Sincap Peluş Ailesi', category: 'Çocuk', icon: '🐿️'},
+            {id: 9, name: 'Ahşap Kulübe Müzik Kutusu', category: 'Dekorasyon', icon: '🏠'},
+            {id: 10, name: 'Kar Tanesi Küpe Seti', category: 'Aksesuar', icon: '💎'},
+            {id: 11, name: 'Orman Ninnileri Kitabı', category: 'Çocuk', icon: '📖'},
+            {id: 12, name: 'Büyülü Teraryum', category: 'Bitki', icon: '🌿'},
+            {id: 13, name: 'Kristal Yıldız Kolye', category: 'Aksesuar', icon: '⭐'},
+            {id: 14, name: 'Sihirli Mantar Lamba', category: 'Aydınlatma', icon: '🍄'},
+            {id: 15, name: 'Orman Eldiveni Seti', category: 'Giyim', icon: '🧤'},
+            {id: 16, name: 'Noel Baba Kapı Süsü', category: 'Dekorasyon', icon: '🎅'},
+            {id: 17, name: 'Büyülü Çikolata Kutusu', category: 'Yiyecek', icon: '🍫'},
+            {id: 18, name: 'Kardan Adam Peluş', category: 'Çocuk', icon: '⛄'},
+            {id: 19, name: 'Yılbaşı Ağacı Topper Yıldız', category: 'Dekorasyon', icon: '🌟'},
+            {id: 20, name: 'Peri Kanatlı Yastık', category: 'Aksesuar', icon: '🦋'},
+            {id: 21, name: 'Elf Şapkası', category: 'Giyim', icon: '🎩'},
+            {id: 22, name: 'Orman Hikayeleri Seti', category: 'Çocuk', icon: '📚'},
+            {id: 23, name: 'Mini Çam Ağacı', category: 'Bitki', icon: '🌲'},
+            {id: 24, name: 'Işıklı Geyik Figürü', category: 'Dekorasyon', icon: '🦌'}
+        ];
+
+        const searchInput = document.querySelector('.search-input');
+        const searchForm = document.querySelector('.search-form');
+        let searchSuggestions = document.getElementById('searchSuggestions');
+        
+        // Create suggestions container if not exists
+        if (!searchSuggestions && searchForm) {
+            searchSuggestions = document.createElement('div');
+            searchSuggestions.id = 'searchSuggestions';
+            searchSuggestions.className = 'search-suggestions';
+            searchForm.parentElement.appendChild(searchSuggestions);
+        }
+
+        if (searchInput && searchSuggestions) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                
+                if (query.length === 0) {
+                    searchSuggestions.classList.remove('active');
+                    return;
+                }
+
+                const results = products.filter(p => 
+                    p.name.toLowerCase().includes(query) || 
+                    p.category.toLowerCase().includes(query)
+                ).slice(0, 8);
+
+                if (results.length > 0) {
+                    searchSuggestions.innerHTML = results.map(item => `
+                        <div class="suggestion-item" onclick="selectSuggestion(${item.id})">
+                            <span class="suggestion-icon">${item.icon}</span>
+                            <span class="suggestion-text">${item.name}</span>
+                            <span class="suggestion-category">${item.category}</span>
+                        </div>
+                    `).join('');
+                    searchSuggestions.classList.add('active');
+                } else {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+        }
+
+        function selectSuggestion(productId) {
+            searchSuggestions.classList.remove('active');
+            window.location.href = '/urun/' + productId;
+        }
+    </script>
+    <main class="profile-page">
+        <div class="container">
+            <h1 class="page-title">👤 Profilim</h1>
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+            <div class="profile-layout">
+                <div class="profile-info">
+                    <h2>Hesap Bilgilerim</h2>
+                    <div class="info-card">
+                        <p><strong>👤 Ad Soyad:</strong> {{ current_user.name }}</p>
+                        <p><strong>📧 Email:</strong> {{ current_user.email }}</p>
+                        <p><strong>✅ Email Doğrulama:</strong> {% if current_user.email_verified %}Doğrulanmış{% else %}Doğrulanmamış{% endif %}</p>
+                        <p><strong>📅 Kayıt Tarihi:</strong> {{ current_user.created_at.strftime('%d.%m.%Y') }}</p>
+                    </div>
+                </div>
+                <div class="orders-section">
+                    <h2>📦 Siparişlerim</h2>
+                    {% if orders %}
+                        {% for order in orders %}
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <span class="order-id">Sipariş #{{ order.id }}</span>
+                                    <span class="order-status">{{ order.status }}</span>
+                                </div>
+                                <div class="order-details">
+                                    <p><strong>Toplam:</strong> {{ "%.2f"|format(order.total) }} ₺</p>
+                                    <p><strong>Tarih:</strong> {{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <p>Henüz sipariş vermemişsiniz.</p>
+                            <a href="/urunler" class="cta-button">Alışverişe Başla</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer><div class="footer-content"><div class="footer-section"><h3>🎁 Büyülü Sepet</h3><p>Yılbaşının sihirli dünyasına hoş geldiniz!</p></div><div class="footer-section"><h3>İletişim</h3><p>📧 info@buyuluorman.com</p><p>📱 +90 (555) 123 45 67</p></div></div><div class="footer-bottom"><p>&copy; 2024 Büyülü Sepet - Yılbaşı Alışveriş Mağazası. Tüm hakları saklıdır. ✨🎄</p></div></footer>
+</body>
+</html>

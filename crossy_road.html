@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐔 Crossy Road - Büyülü Sepet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #gameCanvas {
+            border: 5px solid white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            background: #90EE90;
+        }
+
+        .game-ui {
+            position: fixed;
+            top: 20px;
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(2, 80px);
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid white;
+            border-radius: 15px;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .control-btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:nth-child(1) { grid-column: 2; grid-row: 1; } /* Up */
+        .control-btn:nth-child(2) { grid-column: 1; grid-row: 2; } /* Left */
+        .control-btn:nth-child(3) { grid-column: 3; grid-row: 2; } /* Right */
+        .control-btn:nth-child(4) { grid-column: 2; grid-row: 2; } /* Down */
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px 60px;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            z-index: 200;
+            display: none;
+        }
+
+        .game-over h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .game-over p {
+            font-size: 1.3em;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .game-over button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        .game-over button:hover {
+            transform: scale(1.05);
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .notifications-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            font-size: 1em;
+            transition: all 0.2s;
+        }
+
+        .notifications-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            #gameCanvas {
+                width: 350px !important;
+                height: 500px !important;
+            }
+            
+            .controls {
+                bottom: 20px;
+            }
+            
+            .control-btn {
+                width: 70px;
+                height: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/game" class="back-btn">⬅ Geri Dön</a>
+    <button class="notifications-btn" onclick="showNotificationsPanel()">🔔 Bildirimler</button>
+
+    <div class="game-ui">
+        <div class="stat-box">🏆 Skor: <span id="score">0</span></div>
+        <div class="stat-box">❤️ Can: <span id="lives">3</span></div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div class="controls">
+        <button class="control-btn" onclick="movePlayer('up')">⬆️</button>
+        <button class="control-btn" onclick="movePlayer('left')">⬅️</button>
+        <button class="control-btn" onclick="movePlayer('right')">➡️</button>
+        <button class="control-btn" onclick="movePlayer('down')">⬇️</button>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <h2>🎮 Oyun Bitti!</h2>
+        <p>Skorun: <strong id="finalScore">0</strong></p>
+        <p id="rewardMessage"></p>
+        <button onclick="restartGame()">🔄 Tekrar Oyna</button>
+        <button onclick="goHome()">🏠 Ana Menü</button>
+    </div>
+
+    <!-- Bildirim Modalı -->
+    <div id="notification-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 20px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 1000; max-width: 500px; text-align: center; animation: modalShow 0.3s ease;">
+        <h3 id="notification-title" style="color: #667eea; margin-top: 0; font-size: 1.5em;"></h3>
+        <p id="notification-text" style="font-size: 1.2em; margin: 15px 0;"></p>
+        <button onclick="closeNotification()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1em;">Tamam</button>
+    </div>
+
+    <!-- Backdrop -->
+    <div id="notification-backdrop" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999;" onclick="closeNotificationsPanel()"></div>
+
+    <!-- Bildirimler Paneli -->
+    <div id="notifications-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 20px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); z-index: 1001; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: #667eea; margin: 0;">🔔 Bildirimler</h2>
+            <button onclick="closeNotificationsPanel()" style="background: #f44336; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold;">✖</button>
+        </div>
+        <div id="notifications-list" style="max-height: 400px; overflow-y: auto;">
+            <p style="text-align: center; color: #999; padding: 40px 0;">📦 Henüz bildiriminiz yok</p>
+        </div>
+    </div>
+
+    <style>
+        @keyframes modalShow {
+            from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+    </style>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game state
+        let player = { x: 7, y: 14, char: '🎅' };  // Safe zone at bottom
+        let score = 0;
+        let lives = 3;
+        let gameRunning = true;
+        let speed = 2;
+        let invincible = false;
+        let invincibilityTimer = 0;
+
+        // Grid
+        const gridSize = 40;
+        const rows = 15;
+        const cols = 20;
+
+        // Obstacles
+        let cars = [];
+        let trains = [];
+        let logs = [];
+
+        // Initialize obstacles
+        function initObstacles() {
+            // Cars (row 2, 4, 6)
+            for (let i = 0; i < 3; i++) {
+                cars.push({
+                    row: 2 + i * 2,
+                    x: Math.random() * cols * gridSize,
+                    speed: (i % 2 === 0 ? 1 : -1) * 1.2,
+                    char: ['🚗', '🚕', '🚙'][i]
+                });
+            }
+
+            // Trains (row 8)
+            trains.push({
+                row: 8,
+                x: -200,
+                speed: 3,
+                char: '🚂',
+                length: 5
+            });
+
+            // Logs (rows 9, 10, 11, 12) - all river rows need logs
+            const logStarts = [0, 200, 400, 100]; // Staggered starts
+            for (let i = 0; i < 4; i++) {
+                logs.push({
+                    row: 9 + i,
+                    x: logStarts[i],
+                    speed: (i % 2 === 0 ? 0.5 : -0.5),
+                    char: '🪵',
+                    width: 6
+                });
+            }
+        }
+
+        function drawGrid() {
+            // Grass lanes
+            ctx.fillStyle = '#90EE90';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Road lanes
+            ctx.fillStyle = '#404040';
+            for (let i = 1; i < 8; i++) {
+                if (i % 2 === 0) {
+                    ctx.fillRect(0, i * gridSize, canvas.width, gridSize);
+                }
+            }
+
+            // River
+            ctx.fillStyle = '#4169E1';
+            ctx.fillRect(0, 9 * gridSize, canvas.width, 4 * gridSize);
+
+            // Goal
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(0, 0, canvas.width, gridSize);
+            ctx.fillStyle = '#000';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🎯 HEDEF 🎯', canvas.width / 2, gridSize / 2 + 7);
+        }
+
+        function drawPlayer() {
+            ctx.font = `${gridSize - 5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText(player.char, player.x * gridSize + gridSize / 2, player.y * gridSize + gridSize - 5);
+        }
+
+        function drawObstacles() {
+            ctx.font = `${gridSize - 5}px Arial`;
+            ctx.textAlign = 'center';
+
+            // Cars
+            cars.forEach(car => {
+                ctx.fillText(car.char, car.x, car.row * gridSize + gridSize - 5);
+            });
+
+            // Trains
+            trains.forEach(train => {
+                for (let i = 0; i < train.length; i++) {
+                    ctx.fillText(train.char, train.x + i * gridSize, train.row * gridSize + gridSize - 5);
+                }
+            });
+
+            // Logs
+            logs.forEach(log => {
+                for (let i = 0; i < log.width; i++) {
+                    ctx.fillText(log.char, log.x + i * gridSize, log.row * gridSize + gridSize - 5);
+                }
+            });
+        }
+
+        function updateObstacles() {
+            // Move cars
+            cars.forEach(car => {
+                car.x += car.speed;
+                if (car.x > canvas.width) car.x = -gridSize;
+                if (car.x < -gridSize) car.x = canvas.width;
+            });
+
+            // Move trains
+            trains.forEach(train => {
+                train.x += train.speed;
+                if (train.x > canvas.width + 200) train.x = -200;
+            });
+
+            // Move logs
+            logs.forEach(log => {
+                log.x += log.speed;
+                if (log.x > canvas.width) log.x = -gridSize * log.width;
+                if (log.x < -gridSize * log.width) log.x = canvas.width;
+            });
+        }
+
+        function checkCollisions() {
+            const playerCenterX = player.x * gridSize + gridSize / 2;
+            const playerRow = player.y;
+
+            // Check car collisions
+            if (!invincible) {
+                cars.forEach(car => {
+                    if (playerRow === car.row) {
+                        if (Math.abs(playerCenterX - car.x) < gridSize * 0.7) {
+                            loseLife();
+                        }
+                    }
+                });
+            }
+
+            // Check train collisions
+            if (!invincible) {
+                trains.forEach(train => {
+                    if (playerRow === train.row) {
+                        for (let i = 0; i < train.length; i++) {
+                            if (Math.abs(playerCenterX - (train.x + i * gridSize)) < gridSize * 0.7) {
+                                loseLife();
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Check river - player needs to be on a log
+            if (playerRow >= 9 && playerRow <= 12 && !invincible) {
+                let onLog = false;
+                let logSpeed = 0;
+                
+                logs.forEach(log => {
+                    if (playerRow === log.row) {
+                        const logLeft = log.x;
+                        const logRight = log.x + log.width * gridSize;
+                        const playerX = playerCenterX;
+                        
+                        // Very generous collision - if player is anywhere near log
+                        if (playerX >= logLeft - gridSize/2 && playerX <= logRight + gridSize/2) {
+                            onLog = true;
+                            logSpeed = log.speed;
+                        }
+                    }
+                });
+                
+                if (onLog) {
+                    // Move with log
+                    player.x += logSpeed / gridSize;
+                    player.x = Math.max(0, Math.min(cols - 1, player.x));
+                } else {
+                    loseLife();
+                }
+            }
+
+            // Check goal
+            if (playerRow === 0) {
+                score++;
+                document.getElementById('score').textContent = score;
+                resetPlayer();
+                speed += 0.1;
+            }
+
+            // Check bounds - keep player in bounds
+            if (player.x < 0) player.x = 0;
+            if (player.x >= cols) player.x = cols - 1;
+            if (player.y < 0) player.y = 0;
+            if (player.y >= rows) player.y = rows - 1;
+        }
+
+        function loseLife() {
+            if (invincible) return;
+            
+            lives--;
+            document.getElementById('lives').textContent = lives;
+            invincible = true;
+            invincibilityTimer = 30; // 0.5 seconds at 60fps
+            resetPlayer();
+            
+            if (lives <= 0) {
+                endGame();
+            }
+        }
+
+        function resetPlayer() {
+            player.x = 7;
+            player.y = 14;  // Safe zone at bottom (river is rows 9-12)
+        }
+
+        function movePlayer(direction) {
+            if (!gameRunning) return;
+
+            const oldX = player.x;
+            const oldY = player.y;
+
+            switch(direction) {
+                case 'up': 
+                    player.y = Math.max(0, player.y - 1);
+                    break;
+                case 'down': 
+                    player.y = Math.min(rows - 1, player.y + 1);
+                    break;
+                case 'left': 
+                    player.x = Math.max(0, player.x - 1);
+                    break;
+                case 'right': 
+                    player.x = Math.min(cols - 1, player.x + 1);
+                    break;
+            }
+        }
+
+        function endGame() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+
+            // Save score
+            fetch('/api/crossy-road/score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ score: score })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('🎁 Ödül Kazandın!', data.message);
+                    addNotification('🎮 Crossy Road Ödülü', data.message, 'reward');
+                    document.getElementById('rewardMessage').innerHTML = 
+                        `<strong style="color: #667eea;">${data.message}</strong>`;
+                } else {
+                    showNotification('❌ Hata', data.message || 'Skor kaydedilemedi!');
+                    addNotification('Hata', data.message || 'Skor kaydedilemedi!', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showNotification('❌ Hata', 'Bir hata oluştu!');
+            });
+        }
+
+        function showNotification(title, message) {
+            document.getElementById('notification-title').textContent = title;
+            document.getElementById('notification-text').textContent = message;
+            document.getElementById('notification-modal').style.display = 'block';
+            document.getElementById('notification-backdrop').style.display = 'block';
+        }
+
+        function closeNotification() {
+            document.getElementById('notification-modal').style.display = 'none';
+            document.getElementById('notification-backdrop').style.display = 'none';
+        }
+
+        // Notifications system
+        let notifications = [];
+
+        function addNotification(title, message, type = 'success') {
+            const timestamp = new Date().toLocaleTimeString('tr-TR');
+            const icon = type === 'success' ? '✅' : type === 'reward' ? '🎁' : type === 'error' ? '❌' : 'ℹ️';
+            notifications.unshift({ title, message, timestamp, icon });
+            
+            // Keep only last 20 notifications
+            if (notifications.length > 20) notifications.pop();
+            
+            updateNotificationsList();
+        }
+
+        function updateNotificationsList() {
+            const list = document.getElementById('notifications-list');
+            if (notifications.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #999; padding: 40px 0;">📦 Henüz bildiriminiz yok</p>';
+            } else {
+                list.innerHTML = notifications.map(n => `
+                    <div style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid #667eea;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
+                            <strong style="color: #667eea; font-size: 1.1em;">${n.icon} ${n.title}</strong>
+                            <span style="color: #999; font-size: 0.85em;">${n.timestamp}</span>
+                        </div>
+                        <p style="margin: 5px 0 0 0; color: #555;">${n.message}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function showNotificationsPanel() {
+            document.getElementById('notifications-panel').style.display = 'block';
+            document.getElementById('notification-backdrop').style.display = 'block';
+        }
+
+        function closeNotificationsPanel() {
+            document.getElementById('notifications-panel').style.display = 'none';
+            document.getElementById('notification-backdrop').style.display = 'none';
+        }
+
+        function goHome() {
+            window.location.href = '/game';
+        }
+
+        function restartGame() {
+            score = 0;
+            lives = 3;
+            speed = 2;
+            gameRunning = true;
+            invincible = false;
+            invincibilityTimer = 0;
+            player = { x: 7, y: 14, char: '🎅' };  // Safe starting position
+            cars = [];
+            trains = [];
+            logs = [];
+            initObstacles();
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                // Update invincibility
+                if (invincibilityTimer > 0) {
+                    invincibilityTimer--;
+                    if (invincibilityTimer === 0) {
+                        invincible = false;
+                    }
+                }
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawGrid();
+                updateObstacles();
+                drawObstacles();
+                drawPlayer();
+                checkCollisions();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') movePlayer('up');
+            if (e.key === 'ArrowDown') movePlayer('down');
+            if (e.key === 'ArrowLeft') movePlayer('left');
+            if (e.key === 'ArrowRight') movePlayer('right');
+        });
+
+        // Start game
+        initObstacles();
+        gameLoop();
+
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            console.error('❌ Error:', e.message);
+            showNotification('❌ Hata', e.message);
+        });
+
+        // Unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('❌ Promise Rejection:', e.reason);
+            showNotification('❌ Hata', String(e.reason));
+        });
+    </script>
+</body>
+</html>

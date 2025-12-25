@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ödeme - Büyülü Sepet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Kar Taneleri -->
+    <div class="snowflakes" aria-hidden="true">
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+    </div>
+
+    <!-- Navigasyon -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <h1><a href="/" style="text-decoration:none; color:inherit;">🎁 Büyülü Sepet ✨</a></h1>
+            </div>
+            <div class="search-bar-container">
+                <form action="/urunler" method="GET" class="search-form">
+                    <input type="text" name="search" placeholder="Ürün ara..." class="search-input" id="searchInput">
+                    <button type="submit" class="search-button">🔍</button>
+                </form>
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="nav-links" id="navMenu">
+                <a href="/">Ana Sayfa</a>
+                <a href="/urunler">Ürünler</a>
+                <a href="/urunler?kategori=cocuk" class="kids-link">🎈 Çocuklar İçin</a>
+                <a href="/hakkimizda">Hakkımızda</a>
+                <a href="/iletisim">İletişim</a>
+                <a href="/sepet" class="cart-fab">🛒 Sepet</a>
+                <a href="/favoriler">❤️ Favoriler</a>
+                <a href="/support">💬 Destek</a>
+                <a href="/game" class="forest-link">🌲 Büyülü Orman</a>
+                <a href="/profile">👤 {{ current_user.name.split()[0][0]}}.{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else 'U' }}</a>
+                <a href="/logout">🚪 Çıkış</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Checkout Sayfası -->
+    <main class="checkout-page">
+        <div class="container">
+            <h1 class="page-title">💳 Ödeme</h1>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="checkout-layout">
+                <!-- Sol: Adres ve Hediye Mesajı -->
+                <div class="checkout-left">
+                    <!-- Teslimat Adresi -->
+                    <div class="checkout-section">
+                        <h2>📍 Teslimat Adresi</h2>
+                        
+                        <form action="/siparis-tamamla" method="POST" id="checkoutForm">
+                            {% if adresler and adresler|length > 0 %}
+                                <div class="address-list">
+                                    {% for adres in adresler %}
+                                        <label class="address-card {% if adres.is_default %}selected{% endif %}">
+                                            <input type="radio" name="address_id" value="{{ adres.id }}" 
+                                                   {% if adres.is_default %}checked{% endif %} required>
+                                            <div class="address-content">
+                                                <div class="address-title">{{ adres.title }}</div>
+                                                <div class="address-name">{{ adres.full_name }}</div>
+                                                <div class="address-details">
+                                                    {{ adres.address_line }}<br>
+                                                    {{ adres.district }}, {{ adres.city }}
+                                                    {% if adres.postal_code %}- {{ adres.postal_code }}{% endif %}
+                                                </div>
+                                                <div class="address-phone">📞 {{ adres.phone }}</div>
+                                            </div>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="no-address">
+                                    <p>Kayıtlı adresiniz bulunmuyor.</p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Yeni Adres Ekleme -->
+                            <button type="button" class="btn-add-address" onclick="toggleAddressForm()">
+                                ➕ Yeni Adres Ekle
+                            </button>
+
+                            <div id="addressFormContainer" style="display:none; margin-top: 20px;">
+                                <h3>Yeni Adres</h3>
+                                <div class="address-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Adres Başlığı *</label>
+                                            <input type="text" name="new_title" placeholder="Ev, İş, vb.">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Ad Soyad *</label>
+                                            <input type="text" name="new_full_name" placeholder="Alıcı adı soyadı">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Telefon *</label>
+                                            <input type="tel" name="new_phone" placeholder="05XX XXX XX XX">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Adres *</label>
+                                        <textarea name="new_address_line" rows="3" placeholder="Mahalle, sokak, bina no, daire no"></textarea>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>İl *</label>
+                                            <input type="text" name="new_city" placeholder="İl">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>İlçe *</label>
+                                            <input type="text" name="new_district" placeholder="İlçe">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Posta Kodu</label>
+                                            <input type="text" name="new_postal_code" placeholder="34XXX">
+                                        </div>
+                                    </div>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="new_is_default">
+                                        Varsayılan adres olarak kaydet
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Hediye Mesajı -->
+                            <div class="checkout-section" style="margin-top: 30px;">
+                                <h3>🎁 Hediye Mesajı (İsteğe Bağlı)</h3>
+                                <textarea name="gift_message" rows="4" class="gift-message-input" 
+                                          placeholder="Hediye paketi için özel bir mesaj ekleyebilirsiniz..." maxlength="500"></textarea>
+                                <small style="color: #888;">Maksimum 500 karakter</small>
+                            </div>
+
+                            <!-- Ödeme Yöntemi -->
+                            <div class="checkout-section" style="margin-top: 30px;">
+                                <h3>💳 Ödeme Yöntemi</h3>
+                                <div class="payment-methods">
+                                    <label class="payment-card">
+                                        <input type="radio" name="payment_method" value="card" checked>
+                                        <div class="payment-content">
+                                            <span class="payment-icon">💳</span>
+                                            <span>Kredi/Banka Kartı</span>
+                                        </div>
+                                    </label>
+                                    <label class="payment-card">
+                                        <input type="radio" name="payment_method" value="cash">
+                                        <div class="payment-content">
+                                            <span class="payment-icon">💵</span>
+                                            <span>Kapıda Ödeme</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-complete-order">
+                                ✨ Siparişi Tamamla
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Sağ: Sipariş Özeti -->
+                <div class="checkout-right">
+                    <div class="order-summary">
+                        <h2>📦 Sipariş Özeti</h2>
+
+                        <div class="order-items">
+                            {% for urun in sepet %}
+                                <div class="order-item">
+                                    <div class="order-item-info">
+                                        <span class="order-item-name">{{ urun.isim }}</span>
+                                        <span class="order-item-qty">x{{ urun.adet }}</span>
+                                    </div>
+                                    <div class="order-item-price">
+                                        {{ "%.2f"|format(urun.fiyat * urun.adet) }} ₺
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="order-summary-totals">
+                            <div class="summary-row">
+                                <span>Ara Toplam:</span>
+                                <span>{{ "%.2f"|format(toplam) }} ₺</span>
+                            </div>
+
+                            {% if indirim > 0 %}
+                                <div class="summary-row discount-row">
+                                    <span>İndirim ({{ kupon_kod }}):</span>
+                                    <span style="color: #2ecc71;">-{{ "%.2f"|format(indirim) }} ₺</span>
+                                </div>
+                            {% endif %}
+
+                            {% if toplam >= 200 %}
+                                <div class="summary-row">
+                                    <span>Kargo:</span>
+                                    <span style="color: #2ecc71;">ÜCRETSİZ</span>
+                                </div>
+                            {% else %}
+                                <div class="summary-row">
+                                    <span>Kargo:</span>
+                                    <span>29,90 ₺</span>
+                                </div>
+                            {% endif %}
+
+                            <div class="summary-total">
+                                <span>TOPLAM:</span>
+                                <strong>{{ "%.2f"|format(odenecek + (0 if toplam >= 200 else 29.90)) }} ₺</strong>
+                            </div>
+                        </div>
+
+                        <div class="order-info">
+                            <p>✅ Güvenli Ödeme</p>
+                            <p>📦 Hızlı Kargo</p>
+                            <p>🔄 Kolay İade</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🎁 Büyülü Sepet</h3>
+                <p>Yılbaşının sihirli dünyasına hoş geldiniz!</p>
+            </div>
+            <div class="footer-section">
+                <h3>İletişim</h3>
+                <p>📧 info@buyuluorman.com</p>
+                <p>📱 +90 (555) 123 45 67</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Büyülü Sepet - Yılbaşı Alışveriş Mağazası. Tüm hakları saklıdır. ✨🎄</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+        
+        function toggleAddressForm() {
+            const form = document.getElementById('addressFormContainer');
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+            }
+        }
+
+        // Prevent form submission if new address fields are filled but address_id is selected
+        document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+            const newTitle = document.querySelector('input[name="new_title"]').value;
+            if (newTitle && newTitle.trim() !== '') {
+                // Yeni adres var, bunu ekle
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                fetch('/adres-ekle', {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        title: formData.get('new_title'),
+                        full_name: formData.get('new_full_name'),
+                        phone: formData.get('new_phone'),
+                        address_line: formData.get('new_address_line'),
+                        city: formData.get('new_city'),
+                        district: formData.get('new_district'),
+                        postal_code: formData.get('new_postal_code') || '',
+                        is_default: formData.get('new_is_default') ? 'on' : ''
+                    })
+                }).then(() => {
+                    window.location.reload();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

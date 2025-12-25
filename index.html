@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Büyülü Sepet - Yılbaşı Alışveriş Mağazası</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Kar Taneleri Animasyonu -->
+    <div class="snowflakes" aria-hidden="true">
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+    </div>
+
+    <!-- Navigasyon -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <h1><a href="/" style="text-decoration:none; color:inherit;">🎁 Büyülü Sepet ✨</a></h1>
+            </div>
+            <div class="search-bar-container">
+                <form action="/urunler" method="GET" class="search-form" id="searchForm">
+                    <input type="text" name="search" placeholder="Ürün ara..." class="search-input" id="searchInput" autocomplete="off">
+                    <button type="submit" class="search-button">🔍</button>
+                    <div class="search-suggestions" id="searchSuggestions"></div>
+                </form>
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="nav-links" id="navMenu">
+                <a href="/" class="active">Ana Sayfa</a>
+                <a href="/urunler">Ürünler</a>
+                <a href="/urunler?kategori=cocuk" class="kids-link">🎈 Çocuklar İçin</a>
+                <a href="/hakkimizda">Hakkımızda</a>
+                <a href="/iletisim">İletişim</a>
+                {% if current_user.is_authenticated %}
+                    <a href="/sepet" class="cart-fab">🛒 Sepet</a>
+                    <a href="/favoriler">❤️ Favoriler</a>
+                    <a href="/support">💬 Destek</a>
+                    <a href="/game" class="forest-link">🌲 Büyülü Orman</a>
+                    <a href="/profile">👤 {{ current_user.name.split()[0][0]}}.{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else 'U' }}</a>
+                    <a href="/logout">🚪 Çıkış</a>
+                {% else %}
+                    <a href="/sepet">🛒 Sepet</a>
+                    <a href="/login">🔐 Giriş</a>
+                    <a href="/register">✨ Kayıt Ol</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        // Menü dışına tıklandığında kapat
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // Search autocomplete system
+        const products = [
+            {id: 1, name: 'Sihirli Kar Küresi', category: 'Dekorasyon', icon: '🔮'},
+            {id: 2, name: 'Peri Işığı Lambası', category: 'Aydınlatma', icon: '💡'},
+            {id: 3, name: 'Elfler İçin El Yapımı Atkı', category: 'Giyim', icon: '🧣'},
+            {id: 4, name: 'Çam Kozalağı Süs Seti', category: 'Dekorasyon', icon: '🌲'},
+            {id: 5, name: 'Geyik Peluş Oyuncak', category: 'Çocuk', icon: '🦌'},
+            {id: 6, name: 'Yıldız Tozlu Mum Seti', category: 'Dekorasyon', icon: '🕯️'},
+            {id: 7, name: 'Büyülü Sepet Çayı', category: 'Yiyecek', icon: '☕'},
+            {id: 8, name: 'Sincap Peluş Ailesi', category: 'Çocuk', icon: '🐿️'},
+            {id: 9, name: 'Ahşap Kulübe Müzik Kutusu', category: 'Dekorasyon', icon: '🏠'},
+            {id: 10, name: 'Kar Tanesi Küpe Seti', category: 'Aksesuar', icon: '💎'},
+            {id: 11, name: 'Orman Ninnileri Kitabı', category: 'Çocuk', icon: '📖'},
+            {id: 12, name: 'Büyülü Teraryum', category: 'Bitki', icon: '🌿'},
+            {id: 13, name: 'Kristal Yıldız Kolye', category: 'Aksesuar', icon: '⭐'},
+            {id: 14, name: 'Sihirli Mantar Lamba', category: 'Aydınlatma', icon: '🍄'},
+            {id: 15, name: 'Orman Eldiveni Seti', category: 'Giyim', icon: '🧤'},
+            {id: 16, name: 'Noel Baba Kapı Süsü', category: 'Dekorasyon', icon: '🎅'},
+            {id: 17, name: 'Büyülü Çikolata Kutusu', category: 'Yiyecek', icon: '🍫'},
+            {id: 18, name: 'Kardan Adam Peluş', category: 'Çocuk', icon: '⛄'},
+            {id: 19, name: 'Yılbaşı Ağacı Topper Yıldız', category: 'Dekorasyon', icon: '🌟'},
+            {id: 20, name: 'Peri Kanatlı Yastık', category: 'Aksesuar', icon: '🦋'},
+            {id: 21, name: 'Elf Şapkası', category: 'Giyim', icon: '🎩'},
+            {id: 22, name: 'Orman Hikayeleri Seti', category: 'Çocuk', icon: '📚'},
+            {id: 23, name: 'Mini Çam Ağacı', category: 'Bitki', icon: '🌲'},
+            {id: 24, name: 'Işıklı Geyik Figürü', category: 'Dekorasyon', icon: '🦌'}
+        ];
+
+        const searchInput = document.getElementById('searchInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+
+        if (searchInput && searchSuggestions) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                
+                if (query.length === 0) {
+                    searchSuggestions.classList.remove('active');
+                    return;
+                }
+
+                const results = products.filter(p => 
+                    p.name.toLowerCase().includes(query) || 
+                    p.category.toLowerCase().includes(query)
+                ).slice(0, 8);
+
+                if (results.length > 0) {
+                    searchSuggestions.innerHTML = results.map(item => `
+                        <div class="suggestion-item" onclick="selectSuggestion(${item.id})">
+                            <span class="suggestion-icon">${item.icon}</span>
+                            <span class="suggestion-text">${item.name}</span>
+                            <span class="suggestion-category">${item.category}</span>
+                        </div>
+                    `).join('');
+                    searchSuggestions.classList.add('active');
+                } else {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+        }
+
+        function selectSuggestion(productId) {
+            searchSuggestions.classList.remove('active');
+            window.location.href = '/urun/' + productId;
+        }
+    </script>
+
+    <!-- Hero Bölümü -->
+    <section class="hero">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <div class="hero-content">
+                <h2 class="glow">Büyülü Sepeta Hoş Geldiniz! 🎄</h2>
+                <p class="hero-subtitle">
+                    Kar tanelerinin dans ettiği, peri ışıklarının parıldadığı sihirli dünyamıza adım atın.
+                    <br>Yılbaşının en özel hediyelerini keşfedin!
+                </p>
+                <a href="/urunler" class="cta-button">Alışverişe Başla 🎁</a>
+            </div>
+            <div class="hero-decoration">
+                <span class="tree">🌲</span>
+                <span class="star">⭐</span>
+                <span class="tree">🌲</span>
+                <span class="star">✨</span>
+                <span class="tree">🌲</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Özellikler Bölümü -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">🎁 Neden Büyülü Sepet? 🎁</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🌟</div>
+                    <h3>Özel Tasarımlar</h3>
+                    <p>Her ürün büyülü ormanın sihriyle özel olarak tasarlanmıştır</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎅</div>
+                    <h3>Hızlı Teslimat</h3>
+                    <p>Noel Baba'nın geyikleri ile süper hızlı teslimat garantisi</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔮</div>
+                    <h3>Sihirli Kalite</h3>
+                    <p>Peri tozu ve orman büyüsü ile güçlendirilmiş ürünler</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💝</div>
+                    <h3>Hediye Paketi</h3>
+                    <p>Her ürün özel yılbaşı hediye paketinde gelir</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Öne Çıkan Ürünler -->
+    <section class="featured-products">
+        <div class="container">
+            <h2 class="section-title">⭐ Öne Çıkan Ürünler ⭐</h2>
+            <div class="products-preview">
+                <div class="product-preview-card">
+                    <div class="product-icon">🔮</div>
+                    <h3>Sihirli Kar Küresi</h3>
+                    <p>Büyülü ormanın manzarası</p>
+                    <div class="price">299,99 ₺</div>
+                    <a href="/urun/1" class="preview-button">İncele</a>
+                </div>
+                <div class="product-preview-card">
+                    <div class="product-icon">💡</div>
+                    <h3>Peri Işığı Lambası</h3>
+                    <p>Sihirli parıltı yayan lamba</p>
+                    <div class="price">189,99 ₺</div>
+                    <a href="/urun/2" class="preview-button">İncele</a>
+                </div>
+                <div class="product-preview-card">
+                    <div class="product-icon">🦌</div>
+                    <h3>Geyik Peluş Oyuncak</h3>
+                    <p>Rudolf'un küçük kardeşi</p>
+                    <div class="price">249,99 ₺</div>
+                    <a href="/urun/5" class="preview-button">İncele</a>
+                </div>
+                <div class="product-preview-card">
+                    <div class="product-icon">🏠</div>
+                    <h3>Ahşap Kulübe Müzik Kutusu</h3>
+                    <p>Yılbaşı melodileri çalan kutu</p>
+                    <div class="price">349,99 ₺</div>
+                    <a href="/urun/9" class="preview-button">İncele</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hikaye Bölümü -->
+    <section class="story-section">
+        <div class="container">
+            <div class="story-content">
+                <h2 class="section-title">🎁 Büyülü Sepet Hikayesi 🌲</h2>
+                <p class="story-text">
+                    Çok uzun zaman önce, kuzey kutbunun derinliklerinde, insanların henüz keşfetmediği
+                    büyülü bir orman vardı. Bu orman, yılın her günü kar taneleriyle kaplı, peri ışıklarıyla
+                    aydınlatılmış ve orman sakinlerinin neşesiyle dolu bir yerdi.
+                </p>
+                <p class="story-text">
+                    Elfler, periler, konuşan sincaplar ve nazik geyikler bu ormanda mutluluk içinde yaşardı.
+                    Her yıl, yılbaşı yaklaştığında, dünya çocuklarına özel hediyeler hazırlamak için bir araya gelirlerdi.
+                    Şimdi, bu sihirli dükkan sayesinde, büyülü ormanın en özel ürünlerini sizlerle buluşturuyoruz!
+                </p>
+                <p class="story-text">
+                    Her ürün bir hikaye taşıyor, her hediye bir sihir barındırıyor.
+                    Büyülü ormandan gelen bu özel koleksiyonla, sevdiklerinize unutulmaz bir yılbaşı hediyesi sunabilirsiniz.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🎁 Büyülü Sepet</h3>
+                <p>Yılbaşının sihirli dünyasına hoş geldiniz! Büyülü ormanın en özel ürünleriyle sizlere hizmet veriyoruz.</p>
+                <p>📍 Büyülü Sepet, Kuzey Kutbu, Peri Vadisi No: 25</p>
+            </div>
+            <div class="footer-section">
+                <h3>Hızlı Linkler</h3>
+                <ul>
+                    <li><a href="/">Ana Sayfa</a></li>
+                    <li><a href="/urunler">Ürünler</a></li>
+                    <li><a href="/hakkimizda">Hakkımızda</a></li>
+                    <li><a href="/iletisim">İletişim</a></li>
+                    <li><a href="/sepet">Sepetim</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Kategoriler</h3>
+                <ul>
+                    <li><a href="/urunler?kategori=Dekorasyon">Dekorasyon</a></li>
+                    <li><a href="/urunler?kategori=Oyuncak">Oyuncaklar</a></li>
+                    <li><a href="/urunler?kategori=Aydınlatma">Aydınlatma</a></li>
+                    <li><a href="/urunler?kategori=Giyim">Giyim</a></li>
+                    <li><a href="/urunler?kategori=Aksesuar">Aksesuarlar</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>İletişim</h3>
+                <p>📧 info@buyuluorman.com</p>
+                <p>📱 +90 (555) 123 45 67</p>
+                <p>🕐 Pazartesi - Pazar: 00:00 - 24:00</p>
+                <p style="margin-top: 15px;">✨ Büyülü ormanımız 7/24 açık!</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Büyülü Sepet - Yılbaşı Alışveriş Mağazası. Tüm hakları saklıdır. ✨🎄</p>
+            <p style="margin-top: 10px; opacity: 0.7; font-size: 0.9em; cursor: pointer; user-select: none;" 
+               id="secret-trigger" 
+               onclick="secretClick()" 
+               title="Sihirli bir şey keşfet...">
+                Büyülü Orman v2.0 🌲
+            </p>
+            <div id="secret-game-link" style="display: none; margin-top: 15px;">
+                <a href="/game" style="
+                    display: inline-block;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 12px 30px;
+                    border-radius: 25px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+                    animation: pulse 2s infinite;
+                ">
+                    🎮 Gizli Oyun Merkezi 🎮
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="cartToast" class="cart-toast">
+        <div class="toast-content">
+            <div class="toast-icon">✅</div>
+            <div class="toast-info">
+                <div class="toast-title">Sepete Eklendi!</div>
+                <div class="toast-product-name" id="toastProductName"></div>
+                <div class="toast-product-price" id="toastProductPrice"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Secret Easter Egg
+        let secretClicks = 0;
+        function secretClick() {
+            secretClicks++;
+            const trigger = document.getElementById('secret-trigger');
+            const gameLink = document.getElementById('secret-game-link');
+            
+            if (secretClicks === 1) {
+                trigger.textContent = 'Büyülü Orman v2.0 🌟';
+            } else if (secretClicks === 2) {
+                trigger.textContent = 'Büyülü Orman v2.0 ✨';
+            } else if (secretClicks === 3) {
+                trigger.textContent = 'Büyülü Orman v2.0 🎁';
+            } else if (secretClicks === 4) {
+                trigger.textContent = 'Büyülü Orman v2.0 🎮';
+            } else if (secretClicks >= 5) {
+                trigger.style.display = 'none';
+                gameLink.style.display = 'block';
+                
+                // Confetti effect
+                const colors = ['#667eea', '#764ba2', '#ffd89b', '#19547b'];
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.style.position = 'fixed';
+                        confetti.style.left = Math.random() * window.innerWidth + 'px';
+                        confetti.style.top = '-20px';
+                        confetti.style.width = '10px';
+                        confetti.style.height = '10px';
+                        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                        confetti.style.borderRadius = '50%';
+                        confetti.style.zIndex = '99999';
+                        confetti.style.animation = 'fall 3s linear';
+                        document.body.appendChild(confetti);
+                        
+                        setTimeout(() => confetti.remove(), 3000);
+                    }, i * 30);
+                }
+            }
+        }
+
+        // Toast notification göster
+        {% if session.last_added_product %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const toast = document.getElementById('cartToast');
+            const productName = document.getElementById('toastProductName');
+            const productPrice = document.getElementById('toastProductPrice');
+
+            productName.textContent = '{{ session.last_added_product.isim }}';
+            productPrice.textContent = '{{ "%.2f"|format(session.last_added_product.fiyat) }} ₺';
+
+            toast.classList.add('show');
+
+            setTimeout(function() {
+                toast.classList.remove('show');
+            }, 4000);
+        });
+        {% endif %}
+    </script>
+    
+    <style>
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</body>
+</html>

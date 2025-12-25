@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sipariş Detayı - Büyülü Sepet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Kar Taneleri -->
+    <div class="snowflakes" aria-hidden="true">
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+    </div>
+
+    <!-- Navigasyon -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <h1><a href="/" style="text-decoration:none; color:inherit;">🎁 Büyülü Sepet ✨</a></h1>
+            </div>
+            <div class="search-bar-container">
+                <form action="/urunler" method="GET" class="search-form">
+                    <input type="text" name="search" placeholder="Ürün ara..." class="search-input" id="searchInput">
+                    <button type="submit" class="search-button">🔍</button>
+                </form>
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="nav-links" id="navMenu">
+                <a href="/">Ana Sayfa</a>
+                <a href="/urunler">Ürünler</a>
+                <a href="/urunler?kategori=cocuk" class="kids-link">🎈 Çocuklar İçin</a>
+                <a href="/hakkimizda">Hakkımızda</a>
+                <a href="/iletisim">İletişim</a>
+                <a href="/sepet" class="cart-fab">🛒 Sepet</a>
+                <a href="/favoriler">❤️ Favoriler</a>
+                <a href="/support">💬 Destek</a>
+                <a href="/game" class="forest-link">🌲 Büyülü Orman</a>
+                <a href="/profile">👤 {{ current_user.name.split()[0][0]}}.{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else 'U' }}</a>
+                <a href="/logout">🚪 Çıkış</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sipariş Detayı -->
+    <main class="order-detail-page">
+        <div class="container">
+            <!-- Başarı Mesajı -->
+            <div class="success-banner">
+                <div class="success-icon">✨🎉✨</div>
+                <h1>Siparişiniz Alındı!</h1>
+                <p>Teşekkür ederiz! Siparişiniz başarıyla oluşturuldu.</p>
+            </div>
+
+            <!-- Takip Numarası -->
+            <div class="tracking-section">
+                <div class="tracking-number">
+                    <span class="tracking-label">Takip Numarası:</span>
+                    <strong class="tracking-code">{{ siparis.tracking_number }}</strong>
+                </div>
+                <p class="tracking-info">Bu numarayı kullanarak siparişinizi takip edebilirsiniz.</p>
+            </div>
+
+            <div class="order-detail-layout">
+                <!-- Sol: Sipariş Bilgileri -->
+                <div class="order-left">
+                    <!-- Sipariş Durumu -->
+                    <div class="order-section">
+                        <h2>📦 Sipariş Durumu</h2>
+                        <div class="order-status">
+                            {% if siparis.status == 'Teslim Edildi' %}
+                                <div class="status-badge status-delivered">✅ {{ siparis.status }}</div>
+                            {% elif siparis.status == 'Kargoya Verildi' %}
+                                <div class="status-badge status-shipped">🚚 {{ siparis.status }}</div>
+                            {% elif siparis.status == 'Hazırlanıyor' %}
+                                <div class="status-badge status-preparing">📦 {{ siparis.status }}</div>
+                            {% else %}
+                                <div class="status-badge status-pending">⏳ {{ siparis.status }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Sipariş Zaman Çizelgesi -->
+                        <div class="order-timeline">
+                            <div class="timeline-item completed">
+                                <div class="timeline-icon">✅</div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Sipariş Alındı</div>
+                                    <div class="timeline-date">{{ siparis.order_date.strftime('%d.%m.%Y %H:%M') }}</div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item {% if siparis.status in ['Hazırlanıyor', 'Kargoya Verildi', 'Teslim Edildi'] %}completed{% endif %}">
+                                <div class="timeline-icon">{% if siparis.status in ['Hazırlanıyor', 'Kargoya Verildi', 'Teslim Edildi'] %}✅{% else %}⏳{% endif %}</div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Hazırlanıyor</div>
+                                    <div class="timeline-date">Siparişiniz hazırlanıyor</div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item {% if siparis.status in ['Kargoya Verildi', 'Teslim Edildi'] %}completed{% endif %}">
+                                <div class="timeline-icon">{% if siparis.status in ['Kargoya Verildi', 'Teslim Edildi'] %}✅{% else %}⏳{% endif %}</div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Kargoya Verildi</div>
+                                    <div class="timeline-date">Tahmini 2-3 gün</div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-item {% if siparis.status == 'Teslim Edildi' %}completed{% endif %}">
+                                <div class="timeline-icon">{% if siparis.status == 'Teslim Edildi' %}✅{% else %}⏳{% endif %}</div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Teslim Edildi</div>
+                                    <div class="timeline-date">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sipariş Ürünleri -->
+                    <div class="order-section">
+                        <h2>🛍️ Sipariş Edilen Ürünler</h2>
+                        <div class="ordered-items">
+                            {% for item in siparis_items %}
+                                <div class="ordered-item">
+                                    <div class="ordered-item-info">
+                                        <span class="item-emoji">{{ item.emoji if item.emoji else '✨' }}</span>
+                                        <div class="item-details">
+                                            <div class="item-name">{{ item.isim }}</div>
+                                            <div class="item-qty">Adet: {{ item.adet }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="item-price">
+                                        {{ "%.2f"|format(item.fiyat * item.adet) }} ₺
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Teslimat Adresi -->
+                    {% if adres %}
+                    <div class="order-section">
+                        <h2>📍 Teslimat Adresi</h2>
+                        <div class="delivery-address">
+                            <div class="address-name">{{ adres.full_name }}</div>
+                            <div class="address-details">
+                                {{ adres.address_line }}<br>
+                                {{ adres.district }}, {{ adres.city }}
+                                {% if adres.postal_code %}- {{ adres.postal_code }}{% endif %}
+                            </div>
+                            <div class="address-phone">📞 {{ adres.phone }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Hediye Mesajı -->
+                    {% if siparis.gift_message %}
+                    <div class="order-section">
+                        <h2>🎁 Hediye Mesajı</h2>
+                        <div class="gift-message-box">
+                            {{ siparis.gift_message }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Sağ: Ödeme Özeti -->
+                <div class="order-right">
+                    <div class="payment-summary">
+                        <h2>💰 Ödeme Özeti</h2>
+
+                        <div class="payment-details">
+                            <div class="payment-row">
+                                <span>Ara Toplam:</span>
+                                <span>{{ "%.2f"|format(siparis.total + siparis.discount) }} ₺</span>
+                            </div>
+
+                            {% if siparis.discount > 0 %}
+                                <div class="payment-row discount-row">
+                                    <span>İndirim:</span>
+                                    <span style="color: #2ecc71;">-{{ "%.2f"|format(siparis.discount) }} ₺</span>
+                                </div>
+                            {% endif %}
+
+                            {% if siparis.total >= 170 %}
+                                <div class="payment-row">
+                                    <span>Kargo:</span>
+                                    <span style="color: #2ecc71;">ÜCRETSİZ</span>
+                                </div>
+                            {% else %}
+                                <div class="payment-row">
+                                    <span>Kargo:</span>
+                                    <span>29,90 ₺</span>
+                                </div>
+                            {% endif %}
+
+                            <div class="payment-total">
+                                <span>TOPLAM:</span>
+                                <strong>{{ "%.2f"|format(siparis.total + (0 if siparis.total >= 170 else 29.90)) }} ₺</strong>
+                            </div>
+                        </div>
+
+                        <!-- Sadakat Puanları -->
+                        {% if siparis.loyalty_points and siparis.loyalty_points > 0 %}
+                        <div class="loyalty-points-earned">
+                            <div class="points-icon">⭐</div>
+                            <div class="points-text">
+                                <strong>{{ siparis.loyalty_points }} Puan</strong> kazandınız!
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Aksiyonlar -->
+                        <div class="order-actions">
+                            <a href="/urunler" class="btn-continue-shopping">🛍️ Alışverişe Devam Et</a>
+                            <a href="/profile" class="btn-view-orders">📋 Tüm Siparişlerim</a>
+                        </div>
+                    </div>
+
+                    <!-- Yardım Kutusu -->
+                    <div class="help-box">
+                        <h3>❓ Yardıma mı ihtiyacınız var?</h3>
+                        <p>Sorularınız için müşteri hizmetlerimizle iletişime geçebilirsiniz.</p>
+                        <a href="/support" class="btn-support">💬 Destek Al</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🎁 Büyülü Sepet</h3>
+                <p>Yılbaşının sihirli dünyasına hoş geldiniz!</p>
+            </div>
+            <div class="footer-section">
+                <h3>İletişim</h3>
+                <p>📧 info@buyuluorman.com</p>
+                <p>📱 +90 (555) 123 45 67</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Büyülü Sepet - Yılbaşı Alışveriş Mağazası. Tüm hakları saklıdır. ✨🎄</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

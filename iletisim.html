@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İletişim - Büyülü Sepet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Kar Taneleri Animasyonu -->
+    <div class="snowflakes" aria-hidden="true">
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+    </div>
+
+    <!-- Navigasyon -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <h1><a href="/" style="text-decoration:none; color:inherit;">🎁 Büyülü Sepet ✨</a></h1>
+            </div>
+            <div class="search-bar-container">
+                <form action="/urunler" method="GET" class="search-form">
+                    <input type="text" name="search" placeholder="Ürün ara..." class="search-input">
+                    <button type="submit" class="search-button">🔍</button>
+                </form>
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="nav-links" id="navMenu">
+                <a href="/">Ana Sayfa</a>
+                <a href="/urunler">Ürünler</a>
+                <a href="/urunler?kategori=cocuk" class="kids-link">🎈 Çocuklar İçin</a>
+                <a href="/hakkimizda">Hakkımızda</a>
+                <a href="/iletisim" class="active">İletişim</a>
+                {% if current_user.is_authenticated %}
+                    <a href="/sepet" class="cart-fab">🛒 Sepet</a>
+                    <a href="/favoriler">❤️ Favoriler</a>
+                    <a href="/support">💬 Destek</a>
+                    <a href="/game" class="forest-link">🌲 Büyülü Orman</a>
+                    <a href="/profile">👤 {{ current_user.name.split()[0][0]}}.{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else 'U' }}</a>
+                    <a href="/logout">🚪 Çıkış</a>
+                {% else %}
+                    <a href="/sepet">🛒 Sepet</a>
+                    <a href="/login">🔐 Giriş</a>
+                    <a href="/register">✨ Kayıt Ol</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // Search autocomplete system
+        const products = [
+            {id: 1, name: 'Sihirli Kar Küresi', category: 'Dekorasyon', icon: '🔮'},
+            {id: 2, name: 'Peri Işığı Lambası', category: 'Aydınlatma', icon: '💡'},
+            {id: 3, name: 'Elfler İçin El Yapımı Atkı', category: 'Giyim', icon: '🧣'},
+            {id: 4, name: 'Çam Kozalağı Süs Seti', category: 'Dekorasyon', icon: '🌲'},
+            {id: 5, name: 'Geyik Peluş Oyuncak', category: 'Çocuk', icon: '🦌'},
+            {id: 6, name: 'Yıldız Tozlu Mum Seti', category: 'Dekorasyon', icon: '🕯️'},
+            {id: 7, name: 'Büyülü Sepet Çayı', category: 'Yiyecek', icon: '☕'},
+            {id: 8, name: 'Sincap Peluş Ailesi', category: 'Çocuk', icon: '🐿️'},
+            {id: 9, name: 'Ahşap Kulübe Müzik Kutusu', category: 'Dekorasyon', icon: '🏠'},
+            {id: 10, name: 'Kar Tanesi Küpe Seti', category: 'Aksesuar', icon: '💎'},
+            {id: 11, name: 'Orman Ninnileri Kitabı', category: 'Çocuk', icon: '📖'},
+            {id: 12, name: 'Büyülü Teraryum', category: 'Bitki', icon: '🌿'},
+            {id: 13, name: 'Kristal Yıldız Kolye', category: 'Aksesuar', icon: '⭐'},
+            {id: 14, name: 'Sihirli Mantar Lamba', category: 'Aydınlatma', icon: '🍄'},
+            {id: 15, name: 'Orman Eldiveni Seti', category: 'Giyim', icon: '🧤'},
+            {id: 16, name: 'Noel Baba Kapı Süsü', category: 'Dekorasyon', icon: '🎅'},
+            {id: 17, name: 'Büyülü Çikolata Kutusu', category: 'Yiyecek', icon: '🍫'},
+            {id: 18, name: 'Kardan Adam Peluş', category: 'Çocuk', icon: '⛄'},
+            {id: 19, name: 'Yılbaşı Ağacı Topper Yıldız', category: 'Dekorasyon', icon: '🌟'},
+            {id: 20, name: 'Peri Kanatlı Yastık', category: 'Aksesuar', icon: '🦋'},
+            {id: 21, name: 'Elf Şapkası', category: 'Giyim', icon: '🎩'},
+            {id: 22, name: 'Orman Hikayeleri Seti', category: 'Çocuk', icon: '📚'},
+            {id: 23, name: 'Mini Çam Ağacı', category: 'Bitki', icon: '🌲'},
+            {id: 24, name: 'Işıklı Geyik Figürü', category: 'Dekorasyon', icon: '🦌'}
+        ];
+
+        const searchInput = document.querySelector('.search-input');
+        const searchForm = document.querySelector('.search-form');
+        let searchSuggestions = document.getElementById('searchSuggestions');
+        
+        // Create suggestions container if not exists
+        if (!searchSuggestions && searchForm) {
+            searchSuggestions = document.createElement('div');
+            searchSuggestions.id = 'searchSuggestions';
+            searchSuggestions.className = 'search-suggestions';
+            searchForm.parentElement.appendChild(searchSuggestions);
+        }
+
+        if (searchInput && searchSuggestions) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                
+                if (query.length === 0) {
+                    searchSuggestions.classList.remove('active');
+                    return;
+                }
+
+                const results = products.filter(p => 
+                    p.name.toLowerCase().includes(query) || 
+                    p.category.toLowerCase().includes(query)
+                ).slice(0, 8);
+
+                if (results.length > 0) {
+                    searchSuggestions.innerHTML = results.map(item => `
+                        <div class="suggestion-item" onclick="selectSuggestion(${item.id})">
+                            <span class="suggestion-icon">${item.icon}</span>
+                            <span class="suggestion-text">${item.name}</span>
+                            <span class="suggestion-category">${item.category}</span>
+                        </div>
+                    `).join('');
+                    searchSuggestions.classList.add('active');
+                } else {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+        }
+
+        function selectSuggestion(productId) {
+            searchSuggestions.classList.remove('active');
+            window.location.href = '/urun/' + productId;
+        }
+    </script>
+
+    <!-- İletişim Sayfası -->
+    <main class="contact-page">
+        <div class="container">
+            <h1 class="page-title">📧 Bize Ulaşın</h1>
+            <p class="page-subtitle">Büyülü ormanımızdan size yardımcı olmaktan mutluluk duyarız!</p>
+
+            <div class="contact-layout">
+                <!-- İletişim Formu -->
+                <div class="contact-form-section">
+                    <h2>✉️ Mesaj Gönderin</h2>
+                    <form class="contact-form" onsubmit="event.preventDefault(); alert('🎅 Mesajınız büyülü orman perilerine ulaştı! En kısa sürede size dönüş yapacağız. Teşekkürler!');">
+                        <div class="form-group">
+                            <label for="name">👤 Adınız Soyadınız</label>
+                            <input type="text" id="name" name="name" placeholder="Adınızı ve soyadınızı girin" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">📧 E-posta Adresiniz</label>
+                            <input type="email" id="email" name="email" placeholder="ornek@email.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">📱 Telefon Numaranız</label>
+                            <input type="tel" id="phone" name="phone" placeholder="+90 (555) 123 45 67">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="subject">📋 Konu</label>
+                            <select id="subject" name="subject" required>
+                                <option value="">Lütfen bir konu seçin</option>
+                                <option value="siparis">Sipariş Hakkında</option>
+                                <option value="urun">Ürün Bilgisi</option>
+                                <option value="teslimat">Teslimat Bilgisi</option>
+                                <option value="iade">İade & Değişim</option>
+                                <option value="oneri">Öneri & Şikayet</option>
+                                <option value="diger">Diğer</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message">💬 Mesajınız</label>
+                            <textarea id="message" name="message" rows="6" placeholder="Mesajınızı buraya yazın..." required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-submit">🌟 Gönder</button>
+                    </form>
+                </div>
+
+                <!-- İletişim Bilgileri -->
+                <div class="contact-info-section">
+                    <h2>📍 İletişim Bilgileri</h2>
+
+                    <div class="info-card">
+                        <div class="info-icon">🏠</div>
+                        <h3>Adresimiz</h3>
+                        <p>
+                            Büyülü Sepet Merkezi<br>
+                            Peri Vadisi Sokak No: 25<br>
+                            Kuzey Kutbu / Noel Diyarı<br>
+                            PK: 00001
+                        </p>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-icon">📧</div>
+                        <h3>E-posta</h3>
+                        <p>
+                            <a href="mailto:info@buyuluorman.com">info@buyuluorman.com</a><br>
+                            <a href="mailto:destek@buyuluorman.com">destek@buyuluorman.com</a><br>
+                            <a href="mailto:siparis@buyuluorman.com">siparis@buyuluorman.com</a>
+                        </p>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-icon">📱</div>
+                        <h3>Telefon</h3>
+                        <p>
+                            Müşteri Hizmetleri: <a href="tel:+905551234567">+90 (555) 123 45 67</a><br>
+                            Sipariş Takip: <a href="tel:+905551234568">+90 (555) 123 45 68</a><br>
+                            WhatsApp: <a href="tel:+905551234569">+90 (555) 123 45 69</a>
+                        </p>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-icon">🕐</div>
+                        <h3>Çalışma Saatleri</h3>
+                        <table class="hours-table">
+                            <tr>
+                                <td>Pazartesi - Cuma</td>
+                                <td>09:00 - 22:00</td>
+                            </tr>
+                            <tr>
+                                <td>Cumartesi</td>
+                                <td>10:00 - 20:00</td>
+                            </tr>
+                            <tr>
+                                <td>Pazar</td>
+                                <td>10:00 - 18:00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="text-align: center; color: var(--gold); padding-top: 10px;">
+                                    ✨ Online Sipariş 7/24 Aktif
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-icon">🌐</div>
+                        <h3>Sosyal Medya</h3>
+                        <div class="social-links">
+                            <a href="#" class="social-btn" onclick="event.preventDefault(); alert('🎄 Sosyal medya sayfalarımız yakında aktif olacak!');">
+                                📘 Facebook - Büyülü Sepet
+                            </a>
+                            <a href="#" class="social-btn" onclick="event.preventDefault(); alert('🎄 Sosyal medya sayfalarımız yakında aktif olacak!');">
+                                📷 Instagram - @buyuluorman
+                            </a>
+                            <a href="#" class="social-btn" onclick="event.preventDefault(); alert('🎄 Sosyal medya sayfalarımız yakında aktif olacak!');">
+                                🐦 Twitter - @buyuluorman
+                            </a>
+                            <a href="#" class="social-btn" onclick="event.preventDefault(); alert('🎄 Sosyal medya sayfalarımız yakında aktif olacak!');">
+                                📌 Pinterest - Büyülü Sepet
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SSS Bölümü -->
+            <section class="faq-section">
+                <h2>❓ Sıkça Sorulan Sorular</h2>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <h3>🚀 Kargo ne kadar sürede gelir?</h3>
+                        <p>Noel Baba'nın geyikleri ile 1-2 iş günü içinde teslimat yapılmaktadır. Kuzey kutbu bölgelerine ek 1 gün sürebilir.</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>📦 Kargo ücreti ne kadar?</h3>
+                        <p>200 ₺ ve üzeri alışverişlerde kargo ücretsizdir. Bunun altındaki siparişlerde 29,90 ₺ kargo ücreti uygulanır.</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>🔄 İade şartları nelerdir?</h3>
+                        <p>Ürünlerinizi 30 gün içinde hiçbir neden belirtmeden iade edebilirsiniz. Ürün kutusu ve ambalajı hasarsız olmalıdır.</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>💳 Hangi ödeme yöntemleri var?</h3>
+                        <p>Kredi kartı, banka kartı, havale/EFT ve kapıda ödeme seçeneklerimiz mevcuttur. Peri tozu ile de ödeme kabul edilmektedir!</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>🎁 Hediye paketi yapılıyor mu?</h3>
+                        <p>Tüm siparişlerimiz otomatik olarak özel yılbaşı hediye paketinde gönderilir. Ek ücret alınmaz!</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>🌟 Ürünler gerçekten sihirli mi?</h3>
+                        <p>Evet! Tüm ürünlerimiz Büyülü Sepet Peri Konseyi onaylıdır ve %100 pozitif büyü enerjisi içerir.</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>📱 Sipariş takibi nasıl yapılır?</h3>
+                        <p>Sipariş numaranız ile web sitemizden veya müşteri hizmetlerimizden takip edebilirsiniz.</p>
+                    </div>
+
+                    <div class="faq-item">
+                        <h3>🎅 Toplu sipariş indirim var mı?</h3>
+                        <p>Evet! 10 ve üzeri ürün siparişlerinde %15, 50 ve üzeri ürünlerde %25 özel indirim uygulanır.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🎁 Büyülü Sepet</h3>
+                <p>Yılbaşının sihirli dünyasına hoş geldiniz! Büyülü ormanın en özel ürünleriyle sizlere hizmet veriyoruz.</p>
+                <p>📍 Büyülü Sepet, Kuzey Kutbu, Peri Vadisi No: 25</p>
+            </div>
+            <div class="footer-section">
+                <h3>Hızlı Linkler</h3>
+                <ul>
+                    <li><a href="/">Ana Sayfa</a></li>
+                    <li><a href="/urunler">Ürünler</a></li>
+                    <li><a href="/hakkimizda">Hakkımızda</a></li>
+                    <li><a href="/iletisim">İletişim</a></li>
+                    <li><a href="/sepet">Sepetim</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Kategoriler</h3>
+                <ul>
+                    <li><a href="/urunler?kategori=Dekorasyon">Dekorasyon</a></li>
+                    <li><a href="/urunler?kategori=Oyuncak">Oyuncaklar</a></li>
+                    <li><a href="/urunler?kategori=Aydınlatma">Aydınlatma</a></li>
+                    <li><a href="/urunler?kategori=Giyim">Giyim</a></li>
+                    <li><a href="/urunler?kategori=Aksesuar">Aksesuarlar</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>İletişim</h3>
+                <p>📧 info@buyuluorman.com</p>
+                <p>📱 +90 (555) 123 45 67</p>
+                <p>🕐 Pazartesi - Pazar: 00:00 - 24:00</p>
+                <p style="margin-top: 15px;">✨ Büyülü ormanımız 7/24 açık!</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Büyülü Sepet - Yılbaşı Alışveriş Mağazası. Tüm hakları saklıdır. ✨🎄</p>
+        </div>
+    </footer>
+</body>
+</html>

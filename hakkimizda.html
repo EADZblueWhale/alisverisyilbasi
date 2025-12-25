@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hakkımızda - Büyülü Sepet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Kar Taneleri Animasyonu -->
+    <div class="snowflakes" aria-hidden="true">
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+    </div>
+
+    <!-- Navigasyon -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <h1><a href="/" style="text-decoration:none; color:inherit;">🎁 Büyülü Sepet ✨</a></h1>
+            </div>
+            <div class="search-bar-container">
+                <form action="/urunler" method="GET" class="search-form">
+                    <input type="text" name="search" placeholder="Ürün ara..." class="search-input">
+                    <button type="submit" class="search-button">🔍</button>
+                </form>
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="nav-links" id="navMenu">
+                <a href="/">Ana Sayfa</a>
+                <a href="/urunler">Ürünler</a>
+                <a href="/urunler?kategori=cocuk" class="kids-link">🎈 Çocuklar İçin</a>
+                <a href="/hakkimizda" class="active">Hakkımızda</a>
+                <a href="/iletisim">İletişim</a>
+                {% if current_user.is_authenticated %}
+                    <a href="/sepet" class="cart-fab">🛒 Sepet</a>
+                    <a href="/favoriler">❤️ Favoriler</a>
+                    <a href="/support">💬 Destek</a>
+                    <a href="/game" class="forest-link">🌲 Büyülü Orman</a>
+                    <a href="/profile">👤 {{ current_user.name.split()[0][0]}}.{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else 'U' }}</a>
+                    <a href="/logout">🚪 Çıkış</a>
+                {% else %}
+                    <a href="/sepet">🛒 Sepet</a>
+                    <a href="/login">🔐 Giriş</a>
+                    <a href="/register">✨ Kayıt Ol</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // Search autocomplete system
+        const products = [
+            {id: 1, name: 'Sihirli Kar Küresi', category: 'Dekorasyon', icon: '🔮'},
+            {id: 2, name: 'Peri Işığı Lambası', category: 'Aydınlatma', icon: '💡'},
+            {id: 3, name: 'Elfler İçin El Yapımı Atkı', category: 'Giyim', icon: '🧣'},
+            {id: 4, name: 'Çam Kozalağı Süs Seti', category: 'Dekorasyon', icon: '🌲'},
+            {id: 5, name: 'Geyik Peluş Oyuncak', category: 'Çocuk', icon: '🦌'},
+            {id: 6, name: 'Yıldız Tozlu Mum Seti', category: 'Dekorasyon', icon: '🕯️'},
+            {id: 7, name: 'Büyülü Sepet Çayı', category: 'Yiyecek', icon: '☕'},
+            {id: 8, name: 'Sincap Peluş Ailesi', category: 'Çocuk', icon: '🐿️'},
+            {id: 9, name: 'Ahşap Kulübe Müzik Kutusu', category: 'Dekorasyon', icon: '🏠'},
+            {id: 10, name: 'Kar Tanesi Küpe Seti', category: 'Aksesuar', icon: '💎'},
+            {id: 11, name: 'Orman Ninnileri Kitabı', category: 'Çocuk', icon: '📖'},
+            {id: 12, name: 'Büyülü Teraryum', category: 'Bitki', icon: '🌿'},
+            {id: 13, name: 'Kristal Yıldız Kolye', category: 'Aksesuar', icon: '⭐'},
+            {id: 14, name: 'Sihirli Mantar Lamba', category: 'Aydınlatma', icon: '🍄'},
+            {id: 15, name: 'Orman Eldiveni Seti', category: 'Giyim', icon: '🧤'},
+            {id: 16, name: 'Noel Baba Kapı Süsü', category: 'Dekorasyon', icon: '🎅'},
+            {id: 17, name: 'Büyülü Çikolata Kutusu', category: 'Yiyecek', icon: '🍫'},
+            {id: 18, name: 'Kardan Adam Peluş', category: 'Çocuk', icon: '⛄'},
+            {id: 19, name: 'Yılbaşı Ağacı Topper Yıldız', category: 'Dekorasyon', icon: '🌟'},
+            {id: 20, name: 'Peri Kanatlı Yastık', category: 'Aksesuar', icon: '🦋'},
+            {id: 21, name: 'Elf Şapkası', category: 'Giyim', icon: '🎩'},
+            {id: 22, name: 'Orman Hikayeleri Seti', category: 'Çocuk', icon: '📚'},
+            {id: 23, name: 'Mini Çam Ağacı', category: 'Bitki', icon: '🌲'},
+            {id: 24, name: 'Işıklı Geyik Figürü', category: 'Dekorasyon', icon: '🦌'}
+        ];
+
+        const searchInput = document.querySelector('.search-input');
+        const searchForm = document.querySelector('.search-form');
+        let searchSuggestions = document.getElementById('searchSuggestions');
+        
+        // Create suggestions container if not exists
+        if (!searchSuggestions && searchForm) {
+            searchSuggestions = document.createElement('div');
+            searchSuggestions.id = 'searchSuggestions';
+            searchSuggestions.className = 'search-suggestions';
+            searchForm.parentElement.appendChild(searchSuggestions);
+        }
+
+        if (searchInput && searchSuggestions) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                
+                if (query.length === 0) {
+                    searchSuggestions.classList.remove('active');
+                    return;
+                }
+
+                const results = products.filter(p => 
+                    p.name.toLowerCase().includes(query) || 
+                    p.category.toLowerCase().includes(query)
+                ).slice(0, 8);
+
+                if (results.length > 0) {
+                    searchSuggestions.innerHTML = results.map(item => `
+                        <div class="suggestion-item" onclick="selectSuggestion(${item.id})">
+                            <span class="suggestion-icon">${item.icon}</span>
+                            <span class="suggestion-text">${item.name}</span>
+                            <span class="suggestion-category">${item.category}</span>
+                        </div>
+                    `).join('');
+                    searchSuggestions.classList.add('active');
+                } else {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+        }
+
+        function selectSuggestion(productId) {
+            searchSuggestions.classList.remove('active');
+            window.location.href = '/urun/' + productId;
+        }
+    </script>
+
+    <!-- Hakkımızda Sayfası -->
+    <main class="about-page">
+        <div class="container">
+            <h1 class="page-title">🎁 Büyülü Sepet Hakkında ✨</h1>
+
+            <div class="about-content">
+                <!-- Hikayemiz -->
+                <section class="about-story">
+                    <h2>📖 Hikayemiz</h2>
+                    <p>
+                        Çok uzun zaman önce, kuzey kutbunun en ulaşılmaz köşesinde, sıradan gözlere görünmeyen
+                        büyülü bir orman vardı. Bu orman, yılbaşı ruhunun doğduğu, kar tanelerinin sihirle dans
+                        ettiği ve peri ışıklarının geceleyin parıldadığı mistik bir yerdi.
+                    </p>
+                    <p>
+                        Bu büyülü ormanda, elfler yüzyıllardır el yapımı hediyeler üretir, periler her bir
+                        ürüne peri tozu serper, sincaplar en kaliteli malzemeleri toplar ve geyikler dünyaya
+                        sevgi dolu paketleri taşırdı. Her yıl, yılbaşı yaklaştığında, orman sakinleri dünyanın
+                        dört bir yanına neşe ve mutluluk götürmek için özel ürünler hazırlardı.
+                    </p>
+                    <p>
+                        2024 yılında, büyülü ormanın yaşlı bilge ağacı Çınar Dede, bir karar aldı: "Artık zamanı
+                        geldi! Dünya insanlarına kapılarımızı açmalı, sihrimizi onlarla paylaşmalıyız!" dedi.
+                        İşte o gün, Büyülü Sepet Yılbaşı Mağazası doğdu.
+                    </p>
+                    <p>
+                        Şimdi, bu özel platform sayesinde, büyülü ormanın en değerli hazinelerini, el yapımı
+                        sihirli ürünlerini ve yılbaşı ruhunu taşıyan eşsiz hediyeleri keşfedebilir,
+                        sevdiklerinize unutulmaz sürprizler yapabilirsiniz.
+                    </p>
+                </section>
+
+                <!-- Misyonumuz -->
+                <section class="about-mission">
+                    <h2>🎯 Misyonumuz & Vizyonumuz</h2>
+                    <div class="mission-cards">
+                        <div class="mission-card">
+                            <div class="mission-icon">🌟</div>
+                            <h3>Sihir Yayalım</h3>
+                            <p>Her eve yılbaşının sihirli atmosferini taşımak</p>
+                        </div>
+                        <div class="mission-card">
+                            <div class="mission-icon">💝</div>
+                            <h3>Mutluluk Verelim</h3>
+                            <p>Özel hediyelerle insanların yüzünü güldürmek</p>
+                        </div>
+                        <div class="mission-card">
+                            <div class="mission-icon">🌲</div>
+                            <h3>Doğayı Koruyalım</h3>
+                            <p>Büyülü ormanı ve doğayı gelecek nesillere aktarmak</p>
+                        </div>
+                        <div class="mission-card">
+                            <div class="mission-icon">✨</div>
+                            <h3>Kalite Sunalım</h3>
+                            <p>Peri tozu ile güçlendirilmiş en kaliteli ürünler</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Takımımız -->
+                <section class="about-team">
+                    <h2>👥 Büyülü Ekibimiz</h2>
+                    <div class="team-grid">
+                        <div class="team-member">
+                            <div class="team-avatar">🧙‍♂️</div>
+                            <h3>Büyücü Merlin</h3>
+                            <p class="team-role">Baş Sihirbaz</p>
+                            <p>Tüm ürünlerin sihirlenme sürecinden sorumlu. 500 yıllık tecrübesiyle büyülü ormanın en güçlü büyücüsü.</p>
+                        </div>
+                        <div class="team-member">
+                            <div class="team-avatar">🧝‍♀️</div>
+                            <h3>Elf Alara</h3>
+                            <p class="team-role">Tasarım Şefi</p>
+                            <p>Her ürünün estetik ve sihirli tasarımını oluşturuyor. Ormanın en yetenekli elf sanatçısı.</p>
+                        </div>
+                        <div class="team-member">
+                            <div class="team-avatar">🦌</div>
+                            <h3>Geyik Rudolf</h3>
+                            <p class="team-role">Lojistik Müdürü</p>
+                            <p>Tüm teslimatlardan sorumlu. Parlayan burnu sayesinde en karlı gecelerde bile teslimat yapıyor.</p>
+                        </div>
+                        <div class="team-member">
+                            <div class="team-avatar">🐿️</div>
+                            <h3>Sincap Fındık</h3>
+                            <p class="team-role">Depo Yöneticisi</p>
+                            <p>Tüm ürünlerin güvenli saklanmasından sorumlu. Ormanın en organize sincabı.</p>
+                        </div>
+                        <div class="team-member">
+                            <div class="team-avatar">🧚‍♀️</div>
+                            <h3>Peri Işıl</h3>
+                            <p class="team-role">Kalite Kontrol</p>
+                            <p>Her ürüne peri tozu serpme ve kalite kontrol işlemlerini yönetiyor.</p>
+                        </div>
+                        <div class="team-member">
+                            <div class="team-avatar">🎅</div>
+                            <h3>Noel Baba</h3>
+                            <p class="team-role">Onursal Başkan</p>
+                            <p>Büyülü ormanın onursal başkanı ve en özel müşterimiz. Her yıl en büyük siparişleri veriyor.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Değerlerimiz -->
+                <section class="about-values">
+                    <h2>💎 Değerlerimiz</h2>
+                    <ul class="values-list">
+                        <li>
+                            <strong>🌟 Sihirli Kalite:</strong> Her ürünümüz peri tozu ile serpilmiş,
+                            büyücülerimiz tarafından özel olarak sihirlenmiş en kaliteli malzemelerden üretilir.
+                        </li>
+                        <li>
+                            <strong>💚 Doğa Sevgisi:</strong> Büyülü ormanı ve tüm doğayı korumak bizim
+                            önceliğimiz. Sürdürülebilir ve çevre dostu üretim yapıyoruz.
+                        </li>
+                        <li>
+                            <strong>🎁 Müşteri Mutluluğu:</strong> Sizin mutluluğunuz bizim en büyük
+                            ödülümüz. Her siparişinizi özenle hazırlıyor, aşkla paketliyoruz.
+                        </li>
+                        <li>
+                            <strong>✨ El Yapımı Özen:</strong> Tüm ürünlerimiz elflerimiz tarafından
+                            el yapımı olarak, büyük bir özenle üretiliyor.
+                        </li>
+                        <li>
+                            <strong>🤝 Dürüstlük:</strong> Sihirli olmayan vaatlerde bulunmuyoruz.
+                            Her ürünümüz tam olarak anlatıldığı gibi.
+                        </li>
+                        <li>
+                            <strong>🌈 Çeşitlilik:</strong> Her yaştan, her zevkten insana uygun
+                            geniş bir ürün yelpazesi sunuyoruz.
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- İstatistikler -->
+                <section class="about-stats">
+                    <h2>📊 Rakamlarla Büyülü Sepet</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">500+</div>
+                            <div class="stat-label">Yıllık Tecrübe</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">10.000+</div>
+                            <div class="stat-label">Mutlu Müşteri</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">1.000+</div>
+                            <div class="stat-label">Sihirli Ürün</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">50+</div>
+                            <div class="stat-label">Elf Çalışan</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">%100</div>
+                            <div class="stat-label">Peri Tozu</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">7/24</div>
+                            <div class="stat-label">Sihir Desteği</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🎁 Büyülü Sepet</h3>
+                <p>Yılbaşının sihirli dünyasına hoş geldiniz! Büyülü ormanın en özel ürünleriyle sizlere hizmet veriyoruz.</p>
+                <p>📍 Büyülü Sepet, Kuzey Kutbu, Peri Vadisi No: 25</p>
+            </div>
+            <div class="footer-section">
+                <h3>Hızlı Linkler</h3>
+                <ul>
+                    <li><a href="/">Ana Sayfa</a></li>
+                    <li><a href="/urunler">Ürünler</a></li>
+                    <li><a href="/hakkimizda">Hakkımızda</a></li>
+                    <li><a href="/iletisim">İletişim</a></li>
+                    <li><a href="/sepet">Sepetim</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Kategoriler</h3>
+                <ul>
+                    <li><a href="/urunler?kategori=Dekorasyon">Dekorasyon</a></li>
+                    <li><a href="/urunler?kategori=Oyuncak">Oyuncaklar</a></li>
+                    <li><a href="/urunler?kategori=Aydınlatma">Aydınlatma</a></li>
+                    <li><a href="/urunler?kategori=Giyim">Giyim</a></li>
+                    <li><a href="/urunler?kategori=Aksesuar">Aksesuarlar</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>İletişim</h3>
+                <p>📧 info@buyuluorman.com</p>
+                <p>📱 +90 (555) 123 45 67</p>
+                <p>🕐 Pazartesi - Pazar: 00:00 - 24:00</p>
+                <p style="margin-top: 15px;">✨ Büyülü ormanımız 7/24 açık!</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Büyülü Sepet - Yılbaşı Alışveriş Mağazası. Tüm hakları saklıdır. ✨🎄</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ urun.isim }} - Büyülü Sepet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Kar Taneleri Animasyonu -->
+    <div class="snowflakes" aria-hidden="true">
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+        <div class="snowflake">❅</div>
+        <div class="snowflake">❆</div>
+    </div>
+
+    <!-- Navigasyon -->
+    <header>
+        <div class="navbar">
+            <div class="logo">
+                <h1><a href="/" style="text-decoration:none; color:inherit;">🎁 Büyülü Sepet ✨</a></h1>
+            </div>
+            <div class="search-bar-container">
+                <form action="/urunler" method="GET" class="search-form">
+                    <input type="text" name="search" placeholder="Ürün ara..." class="search-input">
+                    <button type="submit" class="search-button">🔍</button>
+                </form>
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <div class="nav-links" id="navMenu">
+                <a href="/">Ana Sayfa</a>
+                <a href="/urunler" class="active">Ürünler</a>
+                <a href="/urunler?kategori=cocuk" class="kids-link">🎈 Çocuklar İçin</a>
+                <a href="/hakkimizda">Hakkımızda</a>
+                <a href="/iletisim">İletişim</a>
+                <a href="/sepet" class="cart-fab">🛒 Sepet</a>
+                {% if current_user.is_authenticated %}
+                    <a href="/favoriler">❤️ Favoriler</a>
+                    <a href="/support">💬 Destek</a>
+                    <a href="/game" class="forest-link">🌲 Büyülü Orman</a>
+                    <a href="/profile">👤 {{ current_user.name.split()[0][0]}}.{{ current_user.name.split()[1][0] if current_user.name.split()|length > 1 else 'U' }}</a>
+                    <a href="/logout">🚪 Çıkış</a>
+                {% else %}
+                    <a href="/login">🔐 Giriş</a>
+                    <a href="/register">✨ Kayıt Ol</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const toggle = document.querySelector('.menu-toggle');
+            if (!menu.contains(event.target) && !toggle.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
+
+        // Search autocomplete system
+        const products = [
+            {id: 1, name: 'Sihirli Kar Küresi', category: 'Dekorasyon', icon: '🔮'},
+            {id: 2, name: 'Peri Işığı Lambası', category: 'Aydınlatma', icon: '💡'},
+            {id: 3, name: 'Elfler İçin El Yapımı Atkı', category: 'Giyim', icon: '🧣'},
+            {id: 4, name: 'Çam Kozalağı Süs Seti', category: 'Dekorasyon', icon: '🌲'},
+            {id: 5, name: 'Geyik Peluş Oyuncak', category: 'Çocuk', icon: '🦌'},
+            {id: 6, name: 'Yıldız Tozlu Mum Seti', category: 'Dekorasyon', icon: '🕯️'},
+            {id: 7, name: 'Büyülü Sepet Çayı', category: 'Yiyecek', icon: '☕'},
+            {id: 8, name: 'Sincap Peluş Ailesi', category: 'Çocuk', icon: '🐿️'},
+            {id: 9, name: 'Ahşap Kulübe Müzik Kutusu', category: 'Dekorasyon', icon: '🏠'},
+            {id: 10, name: 'Kar Tanesi Küpe Seti', category: 'Aksesuar', icon: '💎'},
+            {id: 11, name: 'Orman Ninnileri Kitabı', category: 'Çocuk', icon: '📖'},
+            {id: 12, name: 'Büyülü Teraryum', category: 'Bitki', icon: '🌿'},
+            {id: 13, name: 'Kristal Yıldız Kolye', category: 'Aksesuar', icon: '⭐'},
+            {id: 14, name: 'Sihirli Mantar Lamba', category: 'Aydınlatma', icon: '🍄'},
+            {id: 15, name: 'Orman Eldiveni Seti', category: 'Giyim', icon: '🧤'},
+            {id: 16, name: 'Noel Baba Kapı Süsü', category: 'Dekorasyon', icon: '🎅'},
+            {id: 17, name: 'Büyülü Çikolata Kutusu', category: 'Yiyecek', icon: '🍫'},
+            {id: 18, name: 'Kardan Adam Peluş', category: 'Çocuk', icon: '⛄'},
+            {id: 19, name: 'Yılbaşı Ağacı Topper Yıldız', category: 'Dekorasyon', icon: '🌟'},
+            {id: 20, name: 'Peri Kanatlı Yastık', category: 'Aksesuar', icon: '🦋'},
+            {id: 21, name: 'Elf Şapkası', category: 'Giyim', icon: '🎩'},
+            {id: 22, name: 'Orman Hikayeleri Seti', category: 'Çocuk', icon: '📚'},
+            {id: 23, name: 'Mini Çam Ağacı', category: 'Bitki', icon: '🌲'},
+            {id: 24, name: 'Işıklı Geyik Figürü', category: 'Dekorasyon', icon: '🦌'}
+        ];
+
+        const searchInput = document.querySelector('.search-input');
+        const searchForm = document.querySelector('.search-form');
+        let searchSuggestions = document.getElementById('searchSuggestions');
+        
+        // Create suggestions container if not exists
+        if (!searchSuggestions && searchForm) {
+            searchSuggestions = document.createElement('div');
+            searchSuggestions.id = 'searchSuggestions';
+            searchSuggestions.className = 'search-suggestions';
+            searchForm.parentElement.appendChild(searchSuggestions);
+        }
+
+        if (searchInput && searchSuggestions) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                
+                if (query.length === 0) {
+                    searchSuggestions.classList.remove('active');
+                    return;
+                }
+
+                const results = products.filter(p => 
+                    p.name.toLowerCase().includes(query) || 
+                    p.category.toLowerCase().includes(query)
+                ).slice(0, 8);
+
+                if (results.length > 0) {
+                    searchSuggestions.innerHTML = results.map(item => `
+                        <div class="suggestion-item" onclick="selectSuggestion(${item.id})">
+                            <span class="suggestion-icon">${item.icon}</span>
+                            <span class="suggestion-text">${item.name}</span>
+                            <span class="suggestion-category">${item.category}</span>
+                        </div>
+                    `).join('');
+                    searchSuggestions.classList.add('active');
+                } else {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+        }
+
+        function selectSuggestion(productId) {
+            searchSuggestions.classList.remove('active');
+            window.location.href = '/urun/' + productId;
+        }
+    </script>
+
+    <!-- Ürün Detay -->
+    <main class="product-detail">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <a href="/">Ana Sayfa</a> /
+                <a href="/urunler">Ürünler</a> /
+                <a href="/urunler?kategori={{ urun.kategori }}">{{ urun.kategori }}</a> /
+                <span>{{ urun.isim }}</span>
+            </div>
+
+            <!-- Ürün Bilgileri -->
+            <div class="product-detail-grid">
+                <!-- Ürün Görseli -->
+                <div class="product-detail-image">
+                    <div class="image-badges">
+                        <span class="badge-new">YENİ</span>
+                        <span class="badge-special">ÖZEL</span>
+                    </div>
+                    <div class="detail-image-placeholder">
+                        {{ urun.emoji if urun.emoji else '✨' }}
+                    </div>
+                </div>
+
+                <!-- Ürün Detayları -->
+                <div class="product-detail-info">
+                    <span class="detail-category">{{ urun.kategori }}</span>
+                    <h1 class="detail-title">{{ urun.isim }}</h1>
+
+                    <div class="detail-rating">
+                        <div class="stars">
+                            {% for i in range(5) %}
+                                {% if i < avg_rating %}⭐{% else %}☆{% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="review-count">({{ review_count }} değerlendirme{% if avg_rating > 0 %} - {{ "%.1f"|format(avg_rating) }}/5{% endif %})</span>
+                    </div>
+
+                    <p class="detail-description">{{ urun.aciklama }}</p>
+
+                    <div class="detail-features">
+                        <h3>✨ Ürün Özellikleri</h3>
+                        <ul>
+                            <li>🌲 Büyülü ormandan özel olarak seçilmiştir</li>
+                            <li>🎁 Ücretsiz hediye paketi ile gelir</li>
+                            <li>✨ Peri tozu ile güçlendirilmiş kalite</li>
+                            <li>🔮 Sihirli enerji barındırır</li>
+                            <li>💝 Sevdikleriniz için mükemmel hediye</li>
+                            <li>🌟 El yapımı ve özenle hazırlanmış</li>
+                        </ul>
+                    </div>
+
+                    <div class="detail-price-section">
+                        <div class="price-box">
+                            <span class="price-label">Fiyat:</span>
+                            <span class="price-value">{{ "%.2f"|format(urun.fiyat) }} ₺</span>
+                        </div>
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <a href="/sepete-ekle/{{ urun.id }}" class="btn-add-to-cart-large">
+                                🛒 Sepete Ekle
+                            </a>
+                            {% if current_user.is_authenticated %}
+                                <a href="/favoriye-ekle/{{ urun.id }}" class="btn-add-fav" style="font-size: 2em;">❤️</a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="detail-shipping">
+                        <p>🚀 <strong>Hızlı Kargo:</strong> Noel Baba'nın geyikleri ile 1-2 gün içinde teslimat</p>
+                        <p>🎅 <strong>Ücretsiz Kargo:</strong> 200 ₺ ve üzeri alışverişlerde</p>
+                        <p>💝 <strong>Hediye Paketi:</strong> Tüm siparişlerde ücretsiz</p>
+                        <p>🔄 <strong>Kolay İade:</strong> 30 gün içinde iade garantisi</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ürün Sekmeleri -->
+            <div class="product-tabs">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="openTab(event, 'aciklama')">📝 Açıklama</button>
+                    <button class="tab-btn" onclick="openTab(event, 'ozellikler')">⚡ Özellikler</button>
+                    <button class="tab-btn" onclick="openTab(event, 'yorumlar')">💬 Yorumlar</button>
+                </div>
+
+                <div id="aciklama" class="tab-content active">
+                    <h3>Ürün Hakkında</h3>
+                    <p>{{ urun.aciklama }}</p>
+                    <p>Bu özel ürün, büyülü ormanın derinliklerinden gelen mistik bir hazinedir. Orman elflerinin özenle hazırladığı bu eşsiz parça, yılbaşı ruhunu evinize taşıyacak. Her detayı düşünülmüş, her köşesine sevgi katılmış bu muhteşem ürün, sevdiklerinize verebileceğiniz en özel hediyelerden biri.</p>
+                    <p>Peri tozu ile serpilmiş, yıldız ışığında kurutulmuş ve sihirli bir büyü ile korunmuş bu ürün, size yıllar boyu eşlik edecek. Büyülü ormanın sıcaklığını, periler diyarının neşesini ve yılbaşının coşkusunu bir arada sunan bu benzersiz ürünü kaçırmayın!</p>
+                </div>
+
+                <div id="ozellikler" class="tab-content">
+                    <h3>Teknik Özellikler</h3>
+                    <ul>
+                        <li><strong>Kategori:</strong> {{ urun.kategori }}</li>
+                        <li><strong>Malzeme:</strong> Büyülü orman kaynaklı özel malzemeler</li>
+                        <li><strong>Üretim:</strong> El yapımı, sınırlı üretim</li>
+                        <li><strong>Menşei:</strong> Büyülü Sepet, Kuzey Kutbu</li>
+                        <li><strong>Sertifika:</strong> Peri Konseyi onaylı</li>
+                        <li><strong>Garanti:</strong> Sonsuz sihir garantisi</li>
+                        <li><strong>Enerji:</strong> %100 pozitif büyü enerjisi</li>
+                        <li><strong>Bakım:</strong> Peri tozu ile hafif silmek yeterli</li>
+                    </ul>
+                </div>
+
+                <div id="yorumlar" class="tab-content">
+                    <div class="reviews-header">
+                        <div>
+                            <h3>Müşteri Yorumları</h3>
+                            {% if reviews %}
+                                <div class="review-stats">
+                                    <span class="avg-rating">
+                                        {% for i in range(avg_rating|int) %}⭐{% endfor %}
+                                        {% if (avg_rating % 1) >= 0.5 %}✨{% endif %}
+                                        <strong>({{ avg_rating|round(1) }}/5.0)</strong>
+                                    </span>
+                                    <span class="review-count">{{ review_count }} Yorum</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if current_user.is_authenticated %}
+                        <div class="review-form">
+                            <h4>📝 Yorumunuzu Paylaşın</h4>
+                            <form action="/yorum-ekle/{{ urun.id }}" method="POST">
+                                <div class="rating-input">
+                                    <label>Ürünü Kaç Yıldız Verirsiniz?</label>
+                                    <div class="star-rating-input">
+                                        <input type="radio" id="star5" name="rating" value="5" required>
+                                        <label for="star5" class="star-label">⭐</label>
+                                        <input type="radio" id="star4" name="rating" value="4">
+                                        <label for="star4" class="star-label">⭐</label>
+                                        <input type="radio" id="star3" name="rating" value="3">
+                                        <label for="star3" class="star-label">⭐</label>
+                                        <input type="radio" id="star2" name="rating" value="2">
+                                        <label for="star2" class="star-label">⭐</label>
+                                        <input type="radio" id="star1" name="rating" value="1">
+                                        <label for="star1" class="star-label">⭐</label>
+                                    </div>
+                                </div>
+                                <div class="comment-input">
+                                    <label for="comment">Düşünceleriniz:</label>
+                                    <textarea id="comment" name="comment" rows="4" placeholder="Ürün hakkında deneyiminizi paylaşın... (zorunlu değil)"></textarea>
+                                </div>
+                                <button type="submit" class="btn-submit-review">✨ Yorum Gönder</button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="review-login-prompt">
+                            <p>💬 Yorum yapmak için <a href="/login" style="color: var(--gold-primary); font-weight: 600;">Giriş yapın</a></p>
+                        </div>
+                    {% endif %}
+
+                    <div class="reviews-list">
+                        {% if reviews %}
+                            <h4 style="margin-top: 40px; margin-bottom: 20px;">📌 Son Yorumlar</h4>
+                            {% for review in reviews %}
+                                <div class="review-item">
+                                    <div class="review-card-header">
+                                        <div class="reviewer-info">
+                                            <span class="reviewer-avatar">👤</span>
+                                            <div class="reviewer-details">
+                                                <strong class="reviewer-name">{{ review.user.name.split()[0] }}</strong>
+                                                <span class="review-date">{{ review.created_at.strftime('%d.%m.%Y') }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="review-rating">
+                                            {% for i in range(review.rating) %}⭐{% endfor %}
+                                            {% for i in range(5 - review.rating) %}<span style="opacity: 0.3;">⭐</span>{% endfor %}
+                                        </div>
+                                    </div>
+                                    {% if review.comment %}
+                                        <p class="review-comment">{{ review.comment }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-reviews">
+                                <p style="font-size: 1.2em; margin: 40px 0; text-align: center; color: var(--text-secondary);">
+                                    ✨ Henüz yorum yapılmamış. İlk yorumu siz yapın!
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🎁 Büyülü Sepet</h3>
+                <p>Yılbaşının sihirli dünyasına hoş geldiniz! Büyülü ormanın en özel ürünleriyle sizlere hizmet veriyoruz.</p>
+                <p>📍 Büyülü Sepet, Kuzey Kutbu, Peri Vadisi No: 25</p>
+            </div>
+            <div class="footer-section">
+                <h3>Hızlı Linkler</h3>
+                <ul>
+                    <li><a href="/">Ana Sayfa</a></li>
+                    <li><a href="/urunler">Ürünler</a></li>
+                    <li><a href="/hakkimizda">Hakkımızda</a></li>
+                    <li><a href="/iletisim">İletişim</a></li>
+                    <li><a href="/sepet">Sepetim</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Kategoriler</h3>
+                <ul>
+                    <li><a href="/urunler?kategori=Dekorasyon">Dekorasyon</a></li>
+                    <li><a href="/urunler?kategori=Oyuncak">Oyuncaklar</a></li>
+                    <li><a href="/urunler?kategori=Aydınlatma">Aydınlatma</a></li>
+                    <li><a href="/urunler?kategori=Giyim">Giyim</a></li>
+                    <li><a href="/urunler?kategori=Aksesuar">Aksesuarlar</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>İletişim</h3>
+                <p>📧 info@buyuluorman.com</p>
+                <p>📱 +90 (555) 123 45 67</p>
+                <p>🕐 Pazartesi - Pazar: 00:00 - 24:00</p>
+                <p style="margin-top: 15px;">✨ Büyülü ormanımız 7/24 açık!</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Büyülü Sepet - Yılbaşı Alışveriş Mağazası. Tüm hakları saklıdır. ✨🎄</p>
+        </div>
+    </footer>
+
+    <!-- Tab JavaScript -->
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+
+            // Tüm tab içeriklerini gizle
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].classList.remove("active");
+            }
+
+            // Tüm butonlardan active class'ını kaldır
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+
+            // Seçili tab'ı göster
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        // Sayfa yüklendiğinde ilk sekmeyi aktif et
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('aciklama').classList.add('active');
+            document.querySelector('.tab-btn').classList.add('active');
+        });
+
+        // Toast notification göster
+        {% if session.last_added_product %}
+        const toast = document.getElementById('cartToast');
+        const productName = document.getElementById('toastProductName');
+        const productPrice = document.getElementById('toastProductPrice');
+
+        productName.textContent = '{{ session.last_added_product.isim }}';
+        productPrice.textContent = '{{ "%.2f"|format(session.last_added_product.fiyat) }} ₺';
+
+        toast.classList.add('show');
+
+        setTimeout(function() {
+            toast.classList.remove('show');
+        }, 4000);
+        {% endif %}
+    </script>
+
+    <!-- Toast Notification -->
+    <div id="cartToast" class="cart-toast">
+        <div class="toast-content">
+            <div class="toast-icon">✅</div>
+            <div class="toast-info">
+                <div class="toast-title">Sepete Eklendi!</div>
+                <div class="toast-product-name" id="toastProductName"></div>
+                <div class="toast-product-price" id="toastProductPrice"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
